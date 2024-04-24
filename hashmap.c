@@ -33,46 +33,118 @@ long hash( char * key, long capacity) {
 }
 
 int is_equal(void* key1, void* key2){
-    if(key1==NULL || key2==NULL) return 0;
+    if(key1 == NULL || key2 == NULL) return 0;
     if(strcmp((char*)key1,(char*)key2) == 0) return 1;
     return 0;
 }
 
 
-void insertMap(HashMap * map, char * key, void * value) {
-
-
+void insertMap(HashMap * map, char * key, void * value) 
+{
+  if(map == NULL || key == NULL) return;
+  if(map -> size == map -> capacity) enlarge(map);
+  long posicion = hash(key,map -> capacity);
+  while(map -> buckets[posicion] != NULL && map-> buckets[posicion] -> key != NULL)
+  {
+    if(is_equal(map -> buckets[posicion] -> key,key))
+    {
+      map -> buckets[posicion] -> value=value;
+      return;
+    }
+    posicion = (posicion+1) % map -> capacity;
+  }
+  map -> buckets[posicion] = createPair(key,value);
+  map -> size++;
 }
 
-void enlarge(HashMap * map) {
-    enlarge_called = 1; //no borrar (testing purposes)
-
-
+void enlarge(HashMap * map) 
+{
+  enlarge_called = 1; //no borrar (testing purposes)
+  Pair ** buckets = map -> buckets;
+  long capacity = map -> capacity;
+  map -> capacity = capacity * 2;
+  map -> size = 0;
+  map -> current = -1;
+  map -> buckets = (Pair **)calloc(map -> capacity,sizeof(Pair *));
+  for(long i = 0; i < capacity; i++)
+  {
+    if(buckets[i] != NULL && buckets[i] -> key != NULL)
+    {
+      insertMap(map,buckets[i] -> key,buckets[i] -> value);
+    }
+  }
+  free(buckets);
 }
 
 
-HashMap * createMap(long capacity) {
-
-    return NULL;
+HashMap * createMap(long capacity) 
+{
+  HashMap * map = (HashMap *)malloc(sizeof(HashMap));
+  map -> buckets = (Pair **)calloc(capacity, sizeof(Pair *));
+  map -> size = 0;
+  map -> capacity = capacity;
+  map -> current = -1;
+  return map;
 }
 
-void eraseMap(HashMap * map,  char * key) {    
-
-
+void eraseMap(HashMap * map,  char * key) 
+{
+  if(map == NULL || key == NULL) return;
+  long posicion = hash(key,map -> capacity);
+  while(map -> buckets[posicion] != NULL && map-> buckets[posicion] -> key != NULL)
+  {
+    if(is_equal(map -> buckets[posicion] -> key,key))
+    {
+      map -> buckets[posicion] -> key = NULL;
+      map -> buckets[posicion] -> value = NULL;
+      map -> size--;
+      return;
+    }
+    posicion = (posicion+1) % map -> capacity;
+  }
 }
 
-Pair * searchMap(HashMap * map,  char * key) {   
-
-
-    return NULL;
+Pair * searchMap(HashMap * map,  char * key) 
+{   
+  if(map == NULL || key == NULL) return NULL;
+  long posicion = hash(key,map -> capacity);
+  while(map -> buckets[posicion] != NULL && map-> buckets[posicion] -> key != NULL)
+  {
+    if(is_equal(map -> buckets[posicion] -> key,key))
+    {
+      map -> current = posicion;
+      return map -> buckets[posicion];
+    }
+    posicion = (posicion+1) % map -> capacity;
+  }
+  return NULL;
 }
 
-Pair * firstMap(HashMap * map) {
-
-    return NULL;
+Pair * firstMap(HashMap * map) 
+{
+  if(map == NULL) return NULL;
+  while(map -> current != -1)
+  {
+    if(map -> buckets[map -> current] != NULL && map -> buckets[map -> current] -> key != NULL)
+    {
+      return map -> buckets[map -> current];
+    }
+    map -> current = (map -> current + 1) % map -> capacity;
+  }
+  return NULL;
 }
 
-Pair * nextMap(HashMap * map) {
-
-    return NULL;
+Pair * nextMap(HashMap * map) 
+{
+  if(map == NULL) return NULL;
+  map -> current = (map -> current + 1) % map -> capacity;
+  while(map -> current != -1)
+  {
+    if(map -> buckets[map -> current] != NULL && map -> buckets[map -> current] -> key != NULL)
+    {
+      return map -> buckets[map -> current];
+    }
+    map -> current = (map -> current + 1) % map -> capacity;
+  }
+  return NULL;
 }
